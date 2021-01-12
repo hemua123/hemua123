@@ -1,0 +1,11 @@
+{
+  "name": "koko",
+  "env": {
+    "YOUR_APP_NAME": {
+         "description": "use for check name",
+         "value": ""
+    }
+  },
+  "repository": "https://github.com/hemua123/heroku",
+  "stack": "container"
+ }
