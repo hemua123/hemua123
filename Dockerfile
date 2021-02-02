@@ -1,6 +1,7 @@
 FROM centos:latest
 
-ENV LANG       en_US.UTF-8
+ENV LANG       C.UTF-8
+ENV LC_ALL       C.UTF-8
 RUN rm -rf /bin/sh && ln -sf /bin/bash /bin/sh
 RUN dnf install -y epel-release
 RUN dnf remove tinyxml
