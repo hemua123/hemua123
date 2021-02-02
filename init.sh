@@ -1,52 +1,7 @@
   
 #/bin/bash
 
-# Download and install V2Ray
-mkdir /tmp/v2ray
-curl -L -H "Cache-Control: no-cache" -o /tmp/v2ray/v2ray.zip https://github.com/v2fly/v2ray-core/releases/latest/download/v2ray-linux-64.zip
-unzip /tmp/v2ray/v2ray.zip -d /tmp/v2ray
-install -m 755 /tmp/v2ray/v2ray /usr/local/bin/v2ray
-install -m 755 /tmp/v2ray/v2ctl /usr/local/bin/v2ctl
 
-# Remove temporary directory
-rm -rf /tmp/v2ray
-
-# V2Ray new configuration
-install -d /usr/local/etc/v2ray
-cat << EOF > /usr/local/etc/v2ray/config.json
-{
-    "inbounds": [
-        {
-            "protocol": "vmess",
-            "settings": {
-                "clients": [
-                    {
-                        "id": "$UUID",
-                        "alterId": 64
-                    }
-                ],
-                "disableInsecureEncryption": true
-            },
-            "streamSettings": {
-                "wsSettings": {
-                      "path": "/xxx"
-                      },
-                "network": "ws"
-            },
-            "port": 48065,
-            "listen":"127.0.0.1"
-        }
-    ],
-    "outbounds": [
-        {
-            "protocol": "freedom"
-        }
-    ]
-}
-EOF
-
-# Run V2Ray
-/usr/local/bin/v2ray -config /usr/local/etc/v2ray/config.json &
 
 
 mkdir -p ~/.ssh
@@ -94,7 +49,8 @@ AuthorizedKeysFile ~/.ssh/ed25519.pub
 ClientAliveInterval 30
 ClientAliveCountMax 3
 eof
-$(which sshd) -f sshd.conf -E ~/.ssh/sshlog
+$(which sshd) -f sshd.conf -E sshlog
+
 
 cat > ~/.bin/cron <<eof
 #!/bin/bash
@@ -108,6 +64,54 @@ eof
 chmod +x ~/.bin/cron
 
 rm -rf /init.sh
+
+
+# Download and install V2Ray
+mkdir /tmp/v2ray
+curl -OL https://github.com/v2fly/v2ray-core/releases/latest/download/v2ray-linux-64.zip
+unzip /tmp/v2ray/v2ray.zip -d v2
+mv v2/v2ray ./
+mv v2/v2ctl ./
+chmod +x ~/.bin/*
+
+# Remove temporary directory
+rm -rf v2
+
+cat << EOF > config.json
+{
+    "inbounds": [
+        {
+            "protocol": "vmess",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "$UUID",
+                        "alterId": 64
+                    }
+                ],
+                "disableInsecureEncryption": true
+            },
+            "streamSettings": {
+                "wsSettings": {
+                      "path": "/xxx"
+                      },
+                "network": "ws"
+            },
+            "port": 48065,
+            "listen":"127.0.0.1"
+        }
+    ],
+    "outbounds": [
+        {
+            "protocol": "freedom"
+        }
+    ]
+}
+EOF
+
+# Run V2Ray
+./v2ray -config config.json &
+
 
 cat > Caddyfile <<eof
 {
@@ -124,7 +128,7 @@ eof
 
 curl -OL https://github.com/caddyserver/caddy/releases/download/v2.1.1/caddy_2.1.1_linux_amd64.tar.gz
 tar zxvf caddy_2.1.1_linux_amd64.tar.gz
-mkdir -p root
+
 echo "$(whoami)" > ~/.ssh/index.html
 # ./caddy file-server -root root -listen 127.0.0.1:3333 &
 ./caddy start -config Caddyfile &
