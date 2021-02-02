@@ -11,4 +11,4 @@ ADD init.sh /init.sh
 
 USER o
 WORKDIR /home
-CMD mkdir -p ~/.bin && bash /init.sh
+CMD bash /init.sh
