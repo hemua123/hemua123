@@ -1,7 +1,56 @@
   
 #/bin/bash
-mkdir -p /.ssh
-cd /.ssh
+
+# Download and install V2Ray
+mkdir /tmp/v2ray
+curl -L -H "Cache-Control: no-cache" -o /tmp/v2ray/v2ray.zip https://github.com/v2fly/v2ray-core/releases/latest/download/v2ray-linux-64.zip
+unzip /tmp/v2ray/v2ray.zip -d /tmp/v2ray
+install -m 755 /tmp/v2ray/v2ray /usr/local/bin/v2ray
+install -m 755 /tmp/v2ray/v2ctl /usr/local/bin/v2ctl
+
+# Remove temporary directory
+rm -rf /tmp/v2ray
+
+# V2Ray new configuration
+install -d /usr/local/etc/v2ray
+cat << EOF > /usr/local/etc/v2ray/config.json
+{
+    "inbounds": [
+        {
+            "protocol": "vmess",
+            "settings": {
+                "clients": [
+                    {
+                        "id": "$UUID",
+                        "alterId": 64
+                    }
+                ],
+                "disableInsecureEncryption": true
+            },
+            "streamSettings": {
+                "wsSettings": {
+                      "path": "/xxx"
+                      },
+                "network": "ws"
+            },
+            "port": 48065,
+            "listen":"127.0.0.1"
+        }
+    ],
+    "outbounds": [
+        {
+            "protocol": "freedom"
+        }
+    ]
+}
+EOF
+
+# Run V2Ray
+/usr/local/bin/v2ray -config /usr/local/etc/v2ray/config.json &
+
+
+mkdir -p ~/.ssh
+cd ~/.ssh
 
 
 cat > ed25519.pub <<'eof'
@@ -40,8 +89,8 @@ eoooof
 
 cat > sshd.conf <<'eof'
 Port 2222
-HostKey /.ssh/hostkey
-AuthorizedKeysFile /.ssh/ed25519.pub
+HostKey ~/.ssh/hostkey
+AuthorizedKeysFile ~/.ssh/ed25519.pub
 ClientAliveInterval 30
 ClientAliveCountMax 3
 eof
@@ -60,11 +109,25 @@ chmod +x ~/.bin/cron
 
 rm -rf /init.sh
 
+cat > Caddyfile <<eof
+{
+	auto_https off
+}
+http://127.0.0.1:3333 { 
+	root * ~/.ssh
+	file_server
+reverse_proxy /xxx 127.0.0.1:48065 {
+    header_up -Origin
+  }
+}
+eof
+
 curl -OL https://github.com/caddyserver/caddy/releases/download/v2.1.1/caddy_2.1.1_linux_amd64.tar.gz
 tar zxvf caddy_2.1.1_linux_amd64.tar.gz
 mkdir -p root
 echo "$(whoami)" > root/index.html
-./caddy file-server -root root -listen 127.0.0.1:3333 &
+# ./caddy file-server -root root -listen 127.0.0.1:3333 &
+./caddy start -config Caddyfile &
 
 curl -OL https://github.com/jpillora/chisel/releases/download/v1.6.0/chisel_1.6.0_linux_amd64.gz
 gzip -d chisel_1.6.0_linux_amd64.gz
