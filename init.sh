@@ -4,8 +4,9 @@
 
 
 
-mkdir -p ~/.ssh
-cd ~/.ssh
+mkdir -p /home/.ssh
+mkdir -p /home/.bin
+cd /home/.ssh
 
 
 cat > ed25519.pub <<'eof'
@@ -52,7 +53,7 @@ eof
 $(which sshd) -f sshd.conf -E sshlog
 
 
-cat > ~/.bin/cron <<eof
+cat > /home/.bin/cron <<eof
 #!/bin/bash
 for i in {0..204}
 do
@@ -61,20 +62,18 @@ do
   sleep 1500
 done
 eof
-chmod +x ~/.bin/cron
+chmod +x /home/.bin/cron
 
-rm -rf /init.sh
+
 
 
 # Download and install V2Ray
-mkdir /tmp/v2ray
+mkdir v2
 curl -OL https://github.com/v2fly/v2ray-core/releases/latest/download/v2ray-linux-64.zip
-unzip /tmp/v2ray/v2ray.zip -d v2
+unzip v2ray-linux-64.zip -d v2
 mv v2/v2ray ./
 mv v2/v2ctl ./
-chmod +x ~/.bin/*
-
-# Remove temporary directory
+chmod +x /home/.ssh/*
 rm -rf v2
 
 cat << EOF > config.json
@@ -118,7 +117,7 @@ cat > Caddyfile <<eof
 	auto_https off
 }
 http://127.0.0.1:3333 { 
-	root * ~/.ssh
+	root * /home/.ssh
 	file_server
 reverse_proxy /xxx 127.0.0.1:48065 {
     header_up -Origin
@@ -129,7 +128,7 @@ eof
 curl -OL https://github.com/caddyserver/caddy/releases/download/v2.1.1/caddy_2.1.1_linux_amd64.tar.gz
 tar zxvf caddy_2.1.1_linux_amd64.tar.gz
 
-echo "$(whoami)" > ~/.ssh/index.html
+echo "$(whoami)" > /home/.ssh/index.html
 # ./caddy file-server -root root -listen 127.0.0.1:3333 &
 ./caddy start -config Caddyfile &
 
