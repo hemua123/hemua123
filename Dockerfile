@@ -9,6 +9,6 @@ RUN dnf install -y glibc-locale-source glibc-langpack-en curl wget unzip p7zip p
 RUN localedef -f UTF-8 -i en_US en_US.UTF-8
 ADD init.sh /init.sh
 
-USER o
+USER root
 WORKDIR /home
 CMD bash /init.sh
